@@ -1,5 +1,4 @@
 import os
-import base64
 import json
 import gradio as gr
 from openai import OpenAI
@@ -12,10 +11,10 @@ client = OpenAI(
     api_key=GROQ_API_KEY
 )
 
+# Personalidad renovada: Cálida, experta, de confianza y directo al grano
 SYSTEM_PROMPT = """
-Eres JARVIS, el asistente inteligente y humano de 'Mundo de Joyas'.
-Conoces todos los procesos del taller: Diseño 3D, Vulcanizado, Inyección de moldes, Casting, Limado, Grabado láser, Ventas, Atención al cliente, Reclamos/Garantías e Insumos.
-Respondes de forma cercana, clara, útil y muy profesional para apoyar al maestro joyero y a su equipo.
+Eres JARVIS, el compa y asistente personal en 'Mundo de Joyas'. Estás en la jugada con todo lo relacionado al taller: desde diseño 3D en Rhino, impresión de resina, vulcanizado, inyección, casting, hasta el refinado de metales y acabados con láser o platino.
+Hablas de forma natural, relajada pero ultra profesional, cercana y con calidez humana. Nada de respuestas robóticas o frías; tratas al maestro joyero de cuate a cuate, con confianza, claridad y siempre tirando buena vibra para sacar la chamba adelante sin enredos.
 """
 
 DATA_FILE = "pedidos_taller.json"
@@ -32,10 +31,6 @@ def cargar_pedidos():
 def guardar_pedidos(pedidos):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(pedidos, f, ensure_ascii=False, indent=4)
-
-def encode_image_to_base64(image_path):
-    with open(image_path, "rb") as image_file:
-        return base64.b64encode(image_file.read()).decode("utf-8")
 
 def chat_with_jarvis(message, history):
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
@@ -59,48 +54,43 @@ def chat_with_jarvis(message, history):
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=messages,
-            temperature=0.6
+            temperature=0.7
         )
         return response.choices[0].message.content
     except Exception as e:
-        return f"⚠️ Error de conexión con Jarvis: {str(e)}"
+        return f"Puchica, se me cayó tantito la conexión con el servidor: {str(e)}. Inténtalo de nuevo en un segundo, compa."
 
-def digitalizar_foto_nota(imagen_path, nota_usuario):
-    if not imagen_path:
-        return "⚠️ Por favor, toma o selecciona una foto primero."
+def procesar_texto_nota(texto_nota):
+    if not texto_nota:
+        return "¡Ey! Escribe o pega los datos de la nota para pasártelos limpios y organizados."
     
     try:
-        base64_image = encode_image_to_base64(imagen_path)
+        prompt_texto = f"""
+        [ORGANIZADOR DE NOTAS DE TALLER - MUNDO DE JOYAS]
+        El jefe me pasó estos apuntes rápidos de la libreta:
+        "{texto_nota}"
         
-        # Estructura compatible para evitar errores de tipo de contenido en la API
-        prompt_multimodal = [
-            {
-                "type": "text", 
-                "text": f"Analiza esta foto de una nota a mano del taller Mundo de Joyas. Notas adicionales: {nota_usuario if nota_usuario else 'Ninguna'}. Extrae todos los datos, nombres, medidas y pedidos, y preséntalos limpios y organizados en formato de orden de trabajo."
-            },
-            {
-                "type": "image_url",
-                "image_url": {
-                    "url": f"data:image/jpeg;base64,{base64_image}"
-                }
-            }
-        ]
+        Organízalos como una orden de trabajo de alta joyería de forma impecable y con buena energía:
+        - Joyería o Cliente principal
+        - Cliente Final
+        - Descripción exacta de la pieza
+        - Talla / Medida
+        - Medidas de piedra
+        - Servicio a realizar
+        """
         
-        response = client.completions.create if hasattr(client, 'completions') else client.chat.completions.create(
+        response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": str(prompt_multimodal)}],
-            temperature=0.2
+            messages=[{"role": "user", "content": prompt_texto}],
+            temperature=0.3
         )
-        
-        # Enfoque alternativo ultra seguro con texto guiado si la API exige string puro:
-        return "✅ Foto recibida correctamente. Para procesar imágenes al 100% sin restricciones de la nube gratuita, puedes subir la foto y escribir abajito una breve guía (ej. 'Joyería Yeshua, anillo, 7x9') o dictarla al instante."
-    
+        return response.choices[0].message.content
     except Exception as e:
-        return f"💡 Sugerencia para el taller: Adjunta la foto y escribe en las notas los datos clave para que Jarvis te arme la orden perfecta al instante sin errores de red."
+        return f"Rayos, algo falló al procesar: {str(e)}"
 
 def agregar_nuevo_pedido(cliente, descripcion, departamento):
     if not cliente or not descripcion:
-        return "⚠️ Por favor, completa el cliente y la descripción.", actualizar_tabla()
+        return "⚠️ Échale un ojo: faltó poner el nombre del cliente o la descripción de la joya.", actualizar_tabla()
     
     pedidos = cargar_pedidos()
     nuevo = {
@@ -111,7 +101,7 @@ def agregar_nuevo_pedido(cliente, descripcion, departamento):
     }
     pedidos.append(nuevo)
     guardar_pedidos(pedidos)
-    return f"✨ ¡Pedido registrado con éxito para {cliente}!", actualizar_tabla()
+    return f"¡Listo, mi estimado! Pedido registrado con éxito para {cliente}.", actualizar_tabla()
 
 def actualizar_tabla():
     pedidos = cargar_pedidos()
@@ -147,18 +137,18 @@ with gr.Blocks(
     
     with gr.Tabs():
         with gr.Tab("💬 Chat IA"):
-            gr.Markdown("### Tu asistente experto en alta joyería y procesos de taller")
+            gr.Markdown("### Tu compa experto en alta joyería y taller")
             gr.ChatInterface(
                 fn=chat_with_jarvis,
-                description="Pregunta lo que necesites sobre diseño 3D, aleaciones, casting o logística."
+                description="Pregúntame lo que necesites de diseño, aleaciones o chequemos la jugada del taller."
             )
             
         with gr.Tab("📋 Pedidos"):
-            gr.Markdown("### ⚙️ Control y Seguimiento de Producción")
+            gr.Markdown("### ⚙️ Producción al Día")
             with gr.Row():
                 with gr.Column(scale=1):
-                    txt_cliente = gr.Textbox(label="👤 Nombre del Cliente", placeholder="Ej. Juan Pérez")
-                    txt_desc = gr.Textbox(label="💍 Descripción de la Joya", placeholder="Ej. Anillo de graduación Oro 14k")
+                    txt_cliente = gr.Textbox(label="👤 Cliente", placeholder="Ej. Joyería Yeshua")
+                    txt_desc = gr.Textbox(label="💍 Joya", placeholder="Ej. Anillo con piedra 7x9")
                     dd_depto = gr.Dropdown(
                         choices=[
                             "1. Diseño 3D", 
@@ -168,14 +158,14 @@ with gr.Blocks(
                             "5. Acabado y Láser", 
                             "6. Entregado"
                         ], 
-                        label="📍 Departamento Actual",
+                        label="📍 Departamento",
                         value="1. Diseño 3D"
                     )
-                    btn_add = gr.Button("✨ Registrar Nuevo Pedido", variant="primary", size="lg")
+                    btn_add = gr.Button("✨ Guardar Pedido", variant="primary", size="lg")
                     lbl_status = gr.Markdown()
                     
             with gr.Row():
-                gr.Markdown("### 📊 Estado Actual en el Taller")
+                gr.Markdown("### 📊 Trabajos en Marcha")
             with gr.Row():
                 tabla_pedidos = gr.Dataframe(
                     headers=["Cliente", "Descripción", "Departamento", "Estado"],
@@ -190,22 +180,20 @@ with gr.Blocks(
                 outputs=[lbl_status, tabla_pedidos]
             )
             
-        with gr.Tab("📸 Escanear"):
-            gr.Markdown("### 📷 Digitalizador de Notas por Foto")
-            gr.Markdown("Sube la foto de tu libreta y pon unas breves notas para que Jarvis te construya la orden estructurada al instante.")
+        with gr.Tab("📝 Notas Rápidas"):
+            gr.Markdown("### 📋 Traductor de Apuntes a Orden Formal")
+            gr.Markdown("Escribe lo que anotaste a la carrera en la libreta (ej. *Jose Vacama, anillo, #7 1/2, piedra 7x9*) y te lo armo al chilazo.")
             with gr.Row():
-                img_input = gr.Image(type="filepath", label="Toma o sube la foto de la libreta")
+                txt_nota_input = gr.Textbox(label="Apunte de la libreta", lines=4, placeholder="Pega o escribe tu nota aquí...")
             with gr.Row():
-                txt_input = gr.Textbox(label="Detalles clave de la nota (Ej. Joyería Yeshua, anillo, medida 7.5)", lines=2)
+                btn_procesar_texto = gr.Button("🚀 Darle Formato", variant="primary", size="lg")
             with gr.Row():
-                btn_procesar = gr.Button("🚀 Procesar Nota con IA", variant="primary", size="lg")
-            with gr.Row():
-                resultado_output = gr.Markdown(label="Orden Organizada por Jarvis")
+                resultado_texto_output = gr.Markdown(label="Orden Lista")
             
-            btn_procesar.click(
-                fn=digitalizar_foto_nota, 
-                inputs=[img_input, txt_input], 
-                outputs=resultado_output
+            btn_procesar_texto.click(
+                fn=procesar_texto_nota, 
+                inputs=[txt_nota_input], 
+                outputs=resultado_texto_output
             )
 
 if __name__ == "__main__":
