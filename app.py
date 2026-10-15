@@ -1,9 +1,10 @@
 import os
 import base64
+import json
 import gradio as gr
 from openai import OpenAI
 
-# Tu API Key de Groq integrada para que funcione directo en la nube
+# Tu API Key de Groq integrada
 GROQ_API_KEY = "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"
 
 client = OpenAI(
@@ -16,6 +17,22 @@ Eres JARVIS, el asistente inteligente y humano de 'Mundo de Joyas'.
 Conoces todos los procesos del taller: Diseño 3D, Vulcanizado, Inyección de moldes, Casting, Limado, Grabado láser, Ventas, Atención al cliente, Reclamos/Garantías e Insumos.
 Respondes de forma cercana, clara, útil y muy profesional para apoyar al maestro joyero y a su equipo.
 """
+
+# Archivo JSON para persistencia de pedidos
+DATA_FILE = "pedidos_taller.json"
+
+def cargar_pedidos():
+    if os.path.exists(DATA_FILE):
+        try:
+            with open(DATA_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except:
+            return []
+    return []
+
+def guardar_pedidos(pedidos):
+    with open(DATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(pedidos, f, ensure_ascii=False, indent=4)
 
 def encode_image_to_base64(image_path):
     with open(image_path, "rb") as image_file:
@@ -85,6 +102,28 @@ def digitalizar_foto_nota(imagen_path, nota_usuario):
     except Exception as e:
         return f"⚠️ Error al procesar la información: {str(e)}"
 
+def agregar_nuevo_pedido(cliente, descripcion, departamento):
+    if not cliente or not descripcion:
+        return "⚠️ Por favor, ingresa el nombre del cliente y la descripción de la pieza.", actualizar_tabla()
+    
+    pedidos = cargar_pedidos()
+    nuevo = {
+        "Cliente": cliente,
+        "Descripción": descripcion,
+        "Departamento": departamento,
+        "Estado": "En Proceso"
+    }
+    pedidos.append(nuevo)
+    guardar_pedidos(pedidos)
+    return f"✅ Pedido para '{cliente}' agregado exitosamente al departamento de {departamento}.", actualizar_tabla()
+
+def actualizar_tabla():
+    pedidos = cargar_pedidos()
+    if not pedidos:
+        return []
+    # Retornamos en formato de lista para Gradio Dataframe
+    return [[p["Cliente"], p["Descripción"], p["Departamento"], p["Estado"]] for p in pedidos]
+
 with gr.Blocks(title="Mundo de Joyas - Jarvis") as demo:
     gr.Markdown("# 💎 JARVIS - Sistema Operativo de Taller (Mundo de Joyas)")
     
@@ -93,6 +132,41 @@ with gr.Blocks(title="Mundo de Joyas - Jarvis") as demo:
             gr.ChatInterface(
                 fn=chat_with_jarvis,
                 description="Habla con Jarvis sobre pedidos, estados de fabricación o dudas técnicas."
+            )
+            
+        with gr.Tab("📋 Control de Producción"):
+            gr.Markdown("### Seguimiento de Pedidos por Departamentos del Taller")
+            with gr.Row():
+                with gr.Column():
+                    txt_cliente = gr.Textbox(label="Nombre del Cliente")
+                    txt_desc = gr.Textbox(label="Descripción de la Joya (Ej. Anillo Graduación Oro 14k)")
+                    dd_depto = gr.Dropdown(
+                        choices=[
+                            "1. Diseño 3D", 
+                            "2. Impresión / Inyección", 
+                            "3. Casting (Fundición)", 
+                            "4. Limado / Armado", 
+                            "5. Acabado y Láser", 
+                            "6. Entregado"
+                        ], 
+                        label="Departamento Actual",
+                        value="1. Diseño 3D"
+                    )
+                    btn_add = gr.Button("Registrar Pedido", variant="primary")
+                with gr.Column():
+                    lbl_status = gr.Markdown(label="Estado")
+            
+            gr.Markdown("### 📊 Estado Actual de Pedidos en el Taller")
+            tabla_pedidos = gr.Dataframe(
+                headers=["Cliente", "Descripción", "Departamento", "Estado"],
+                value=actualizar_tabla(),
+                interactive=False
+            )
+            
+            btn_add.click(
+                fn=agregar_nuevo_pedido,
+                inputs=[txt_cliente, txt_desc, dd_depto],
+                outputs=[lbl_status, tabla_pedidos]
             )
             
         with gr.Tab("📸 Digitalizar Notas & Moldes"):
@@ -110,6 +184,5 @@ with gr.Blocks(title="Mundo de Joyas - Jarvis") as demo:
             )
 
 if __name__ == "__main__":
-    # Render asigna automáticamente un puerto mediante la variable de entorno PORT
     port = int(os.environ.get("PORT", 7860))
     demo.launch(server_name="0.0.0.0", server_port=port)
