@@ -57,7 +57,7 @@ def chat_with_jarvis(message, history):
     
     try:
         response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             messages=messages,
             temperature=0.6
         )
@@ -73,14 +73,14 @@ def digitalizar_foto_nota(imagen_path, nota_usuario):
         base64_image = encode_image_to_base64(imagen_path)
         prompt = f"""
         Eres JARVIS en el taller Mundo de Joyas.
-        El usuario ha tomado una foto de una libreta, lista de moldes o notas a mano.
-        Observaciones adicionales: {nota_usuario if nota_usuario else 'Ninguna'}
+        El usuario ha tomado una foto de una libreta, lista de moldes o notas a mano (como la nota de Joyería Yeshua para Jose Vacama).
+        Observaciones adicionales del usuario: {nota_usuario if nota_usuario else 'Ninguna'}
 
-        Por favor, lee la imagen cuidadosamente, extrae todo el texto o listado, organízalo limpiamente en formato de tabla o lista ordenada y prepáralo formalmente para la orden de trabajo del taller.
+        Por favor, analiza la imagen detalladamente, extrae todo el texto, nombres de clientes, medidas, tipos de piedra o procesos descritos a mano, y preséntalos organizados en un formato limpio de orden de trabajo o lista para el taller.
         """
         
         response = client.chat.completions.create(
-            model="llama-3.2-11b-vision-preview",
+            model="openai/gpt-oss-120b",
             messages=[
                 {
                     "role": "user",
@@ -99,7 +99,7 @@ def digitalizar_foto_nota(imagen_path, nota_usuario):
         )
         return response.choices[0].message.content
     except Exception as e:
-        return f"⚠️ Error al procesar la información: {str(e)}"
+        return f"⚠️ Error al procesar la imagen: {str(e)}"
 
 def agregar_nuevo_pedido(cliente, descripcion, departamento):
     if not cliente or not descripcion:
