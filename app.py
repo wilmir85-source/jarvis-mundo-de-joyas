@@ -109,16 +109,19 @@ def actualizar_tabla():
         return []
     return [[p["Cliente"], p["Descripción"], p["Departamento"], p["Estado"]] for p in pedidos]
 
+# Estilos CSS mejorados para fijar el layout en celulares y evitar saltos con el teclado
 custom_css = """
 body { background-color: #0b0f19 !important; }
-.gradio-container { max-width: 100% !important; padding: 10px !important; }
+.gradio-container { max-width: 100% !important; padding: 10px !important; overflow-x: hidden !important; }
 h1, h2, h3 { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+.chatbot { height: 65vh !important; }
 """
 
 ios_meta_head = """
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Mundo de Joyas">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 """
 
 with gr.Blocks(
