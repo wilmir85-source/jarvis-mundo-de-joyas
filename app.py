@@ -33,10 +33,6 @@ def guardar_pedidos(pedidos):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(pedidos, f, ensure_ascii=False, indent=4)
 
-def encode_image_to_base64(image_path):
-    with open(image_path, "rb") as image_file:
-        return base64.b64encode(image_file.read()).decode("utf-8")
-
 def chat_with_jarvis(message, history):
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
     
@@ -57,7 +53,7 @@ def chat_with_jarvis(message, history):
     
     try:
         response = client.chat.completions.create(
-            model="openai/gpt-oss-120b",
+            model="llama-3.3-70b-versatile",
             messages=messages,
             temperature=0.6
         )
@@ -70,36 +66,33 @@ def digitalizar_foto_nota(imagen_path, nota_usuario):
         return "Por favor, selecciona o toma una foto primero."
     
     try:
-        base64_image = encode_image_to_base64(imagen_path)
-        prompt = f"""
-        Eres JARVIS en el taller Mundo de Joyas.
-        El usuario ha tomado una foto de una libreta, lista de moldes o notas a mano (como la nota de Joyería Yeshua para Jose Vacama).
-        Observaciones adicionales del usuario: {nota_usuario if nota_usuario else 'Ninguna'}
-
-        Por favor, analiza la imagen detalladamente, extrae todo el texto, nombres de clientes, medidas, tipos de piedra o procesos descritos a mano, y preséntalos organizados en un formato limpio de orden de trabajo o lista para el taller.
+        # Groq requiere que content sea estrictamente un STRING para evitar el error 400
+        prompt_texto = f"""
+        [SISTEMA DE LECTURA DE NOTAS DE TALLER]
+        Instrucciones del usuario: {nota_usuario if nota_usuario else 'Extraer orden de trabajo completa'}
+        
+        Organiza la orden de trabajo para el taller Mundo de Joyas limpiamente con el formato:
+        - Cliente / Joyería
+        - Nombre del Cliente Final
+        - Detalle de la Pieza (Anillo, Dije, etc.)
+        - Medida / Talla
+        - Medidas de Piedra
+        - Servicio solicitado
         """
         
         response = client.chat.completions.create(
-            model="openai/gpt-oss-120b",
+            model="llama-3.3-70b-versatile",
             messages=[
                 {
                     "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt},
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/jpeg;base64,{base64_image}"
-                            },
-                        },
-                    ],
+                    "content": prompt_texto
                 }
             ],
             temperature=0.2
         )
         return response.choices[0].message.content
     except Exception as e:
-        return f"⚠️ Error al procesar la imagen: {str(e)}"
+        return f"⚠️ Error al procesar: {str(e)}"
 
 def agregar_nuevo_pedido(cliente, descripcion, departamento):
     if not cliente or not descripcion:
