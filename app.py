@@ -18,7 +18,6 @@ Conoces todos los procesos del taller: Diseño 3D, Vulcanizado, Inyección de mo
 Respondes de forma cercana, clara, útil y muy profesional para apoyar al maestro joyero y a su equipo.
 """
 
-# Archivo JSON para persistencia de pedidos
 DATA_FILE = "pedidos_taller.json"
 
 def cargar_pedidos():
@@ -104,7 +103,7 @@ def digitalizar_foto_nota(imagen_path, nota_usuario):
 
 def agregar_nuevo_pedido(cliente, descripcion, departamento):
     if not cliente or not descripcion:
-        return "⚠️ Por favor, ingresa el nombre del cliente y la descripción de la pieza.", actualizar_tabla()
+        return "⚠️ Por favor, ingresa el cliente y la descripción.", actualizar_tabla()
     
     pedidos = cargar_pedidos()
     nuevo = {
@@ -115,48 +114,51 @@ def agregar_nuevo_pedido(cliente, descripcion, departamento):
     }
     pedidos.append(nuevo)
     guardar_pedidos(pedidos)
-    return f"✅ Pedido para '{cliente}' agregado exitosamente al departamento de {departamento}.", actualizar_tabla()
+    return f"✅ Pedido para '{cliente}' guardado.", actualizar_tabla()
 
 def actualizar_tabla():
     pedidos = cargar_pedidos()
     if not pedidos:
         return []
-    # Retornamos en formato de lista para Gradio Dataframe
     return [[p["Cliente"], p["Descripción"], p["Departamento"], p["Estado"]] for p in pedidos]
 
-with gr.Blocks(title="Mundo de Joyas - Jarvis") as demo:
-    gr.Markdown("# 💎 JARVIS - Sistema Operativo de Taller (Mundo de Joyas)")
+# Etiquetas especiales para que el iPhone lo abra como una APP nativa a pantalla completa
+ios_meta_head = """
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mundo de Joyas">
+"""
+
+with gr.Blocks(title="Mundo de Joyas - Jarvis", head=ios_meta_head) as demo:
+    gr.Markdown("## 💎 JARVIS - Mundo de Joyas")
     
     with gr.Tabs():
-        with gr.Tab("💬 Asistente & Consultas"):
+        with gr.Tab("💬 Chat"):
             gr.ChatInterface(
                 fn=chat_with_jarvis,
-                description="Habla con Jarvis sobre pedidos, estados de fabricación o dudas técnicas."
+                description="Habla con Jarvis sobre pedidos o dudas técnicas del taller."
             )
             
-        with gr.Tab("📋 Control de Producción"):
-            gr.Markdown("### Seguimiento de Pedidos por Departamentos del Taller")
-            with gr.Row():
-                with gr.Column():
-                    txt_cliente = gr.Textbox(label="Nombre del Cliente")
-                    txt_desc = gr.Textbox(label="Descripción de la Joya (Ej. Anillo Graduación Oro 14k)")
-                    dd_depto = gr.Dropdown(
-                        choices=[
-                            "1. Diseño 3D", 
-                            "2. Impresión / Inyección", 
-                            "3. Casting (Fundición)", 
-                            "4. Limado / Armado", 
-                            "5. Acabado y Láser", 
-                            "6. Entregado"
-                        ], 
-                        label="Departamento Actual",
-                        value="1. Diseño 3D"
-                    )
-                    btn_add = gr.Button("Registrar Pedido", variant="primary")
-                with gr.Column():
-                    lbl_status = gr.Markdown(label="Estado")
+        with gr.Tab("📋 Pedidos"):
+            gr.Markdown("### Control de Producción")
+            txt_cliente = gr.Textbox(label="Cliente", placeholder="Nombre del cliente")
+            txt_desc = gr.Textbox(label="Descripción de la Joya", placeholder="Ej. Anillo Graduación Oro 14k")
+            dd_depto = gr.Dropdown(
+                choices=[
+                    "1. Diseño 3D", 
+                    "2. Impresión / Inyección", 
+                    "3. Casting (Fundición)", 
+                    "4. Limado / Armado", 
+                    "5. Acabado y Láser", 
+                    "6. Entregado"
+                ], 
+                label="Departamento",
+                value="1. Diseño 3D"
+            )
+            btn_add = gr.Button("Guardar Pedido", variant="primary")
+            lbl_status = gr.Markdown()
             
-            gr.Markdown("### 📊 Estado Actual de Pedidos en el Taller")
+            gr.Markdown("### 📊 Pedidos Activos")
             tabla_pedidos = gr.Dataframe(
                 headers=["Cliente", "Descripción", "Departamento", "Estado"],
                 value=actualizar_tabla(),
@@ -169,13 +171,12 @@ with gr.Blocks(title="Mundo de Joyas - Jarvis") as demo:
                 outputs=[lbl_status, tabla_pedidos]
             )
             
-        with gr.Tab("📸 Digitalizar Notas & Moldes"):
-            gr.Markdown("### Sube una foto de tu libreta a mano o listado de moldes")
-            with gr.Row():
-                img_input = gr.Image(type="filepath", label="Foto de la lista a mano")
-                txt_input = gr.Textbox(label="Notas adicionales (Opcional)", placeholder="Ej. Moldes de anillos de graduación...")
+        with gr.Tab("📸 Escanear"):
+            gr.Markdown("### Digitalizar Notas y Moldes")
+            img_input = gr.Image(type="filepath", label="Foto de nota / lista")
+            txt_input = gr.Textbox(label="Observaciones (Opcional)")
             btn_procesar = gr.Button("Digitalizar con IA", variant="primary")
-            resultado_output = gr.Markdown(label="Resultado Digitalizado")
+            resultado_output = gr.Markdown()
             
             btn_procesar.click(
                 fn=digitalizar_foto_nota, 
