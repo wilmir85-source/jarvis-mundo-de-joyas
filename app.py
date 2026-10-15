@@ -57,7 +57,7 @@ def chat_with_jarvis(message, history):
     
     try:
         response = client.chat.completions.create(
-            model="openai/gpt-oss-20b",
+            model="llama-3.3-70b-versatile",
             messages=messages,
             temperature=0.6
         )
@@ -76,11 +76,11 @@ def digitalizar_foto_nota(imagen_path, nota_usuario):
         El usuario ha tomado una foto de una libreta, lista de moldes o notas a mano.
         Observaciones adicionales: {nota_usuario if nota_usuario else 'Ninguna'}
 
-        Por favor, lee la imagen cuidadosamente, extrae todo el texto o listado, organízalo limpiamente en formato de tabla o lista ordenada y prepáralo formalmente para exportar a PDF o guardar en la base de datos de moldes/pedidos.
+        Por favor, lee la imagen cuidadosamente, extrae todo el texto o listado, organízalo limpiamente en formato de tabla o lista ordenada y prepáralo formalmente para la orden de trabajo del taller.
         """
         
         response = client.chat.completions.create(
-            model="openai/gpt-oss-20b",
+            model="llama-3.2-11b-vision-preview",
             messages=[
                 {
                     "role": "user",
@@ -122,7 +122,6 @@ def actualizar_tabla():
         return []
     return [[p["Cliente"], p["Descripción"], p["Departamento"], p["Estado"]] for p in pedidos]
 
-# Estilos CSS personalizados para darle un toque ultra profesional y elegante
 custom_css = """
 body { background-color: #0b0f19 !important; }
 .gradio-container { max-width: 100% !important; padding: 10px !important; }
