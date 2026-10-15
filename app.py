@@ -103,7 +103,7 @@ def digitalizar_foto_nota(imagen_path, nota_usuario):
 
 def agregar_nuevo_pedido(cliente, descripcion, departamento):
     if not cliente or not descripcion:
-        return "⚠️ Por favor, ingresa el cliente y la descripción.", actualizar_tabla()
+        return "⚠️ Por favor, completa el nombre del cliente y la descripción.", actualizar_tabla()
     
     pedidos = cargar_pedidos()
     nuevo = {
@@ -114,7 +114,7 @@ def agregar_nuevo_pedido(cliente, descripcion, departamento):
     }
     pedidos.append(nuevo)
     guardar_pedidos(pedidos)
-    return f"✅ Pedido para '{cliente}' guardado.", actualizar_tabla()
+    return f"✨ ¡Pedido registrado con éxito para {cliente}!", actualizar_tabla()
 
 def actualizar_tabla():
     pedidos = cargar_pedidos()
@@ -122,48 +122,71 @@ def actualizar_tabla():
         return []
     return [[p["Cliente"], p["Descripción"], p["Departamento"], p["Estado"]] for p in pedidos]
 
-# Etiquetas especiales para que el iPhone lo abra como una APP nativa a pantalla completa
+# Estilos CSS personalizados para darle un toque ultra profesional y elegante
+custom_css = """
+body { background-color: #0b0f19 !important; }
+.gradio-container { max-width: 100% !important; padding: 10px !important; }
+h1, h2, h3 { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+"""
+
 ios_meta_head = """
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Mundo de Joyas">
 """
 
-with gr.Blocks(title="Mundo de Joyas - Jarvis", head=ios_meta_head) as demo:
-    gr.Markdown("## 💎 JARVIS - Mundo de Joyas")
+with gr.Blocks(
+    title="Mundo de Joyas - JARVIS", 
+    theme=gr.themes.Soft(
+        primary_hue="amber", 
+        secondary_hue="slate",
+        neutral_hue="slate"
+    ),
+    css=custom_css,
+    head=ios_meta_head
+) as demo:
+    
+    with gr.Row(elem_id="header-row"):
+        gr.Markdown("# 💎 MUNDO DE JOYAS — *JARVIS OS*")
     
     with gr.Tabs():
-        with gr.Tab("💬 Chat"):
+        with gr.Tab("💬 Chat IA"):
+            gr.Markdown("### Tu asistente experto en alta joyería y procesos de taller")
             gr.ChatInterface(
                 fn=chat_with_jarvis,
-                description="Habla con Jarvis sobre pedidos o dudas técnicas del taller."
+                description="Pregunta lo que necesites sobre diseño 3D, aleaciones, casting o logística."
             )
             
         with gr.Tab("📋 Pedidos"):
-            gr.Markdown("### Control de Producción")
-            txt_cliente = gr.Textbox(label="Cliente", placeholder="Nombre del cliente")
-            txt_desc = gr.Textbox(label="Descripción de la Joya", placeholder="Ej. Anillo Graduación Oro 14k")
-            dd_depto = gr.Dropdown(
-                choices=[
-                    "1. Diseño 3D", 
-                    "2. Impresión / Inyección", 
-                    "3. Casting (Fundición)", 
-                    "4. Limado / Armado", 
-                    "5. Acabado y Láser", 
-                    "6. Entregado"
-                ], 
-                label="Departamento",
-                value="1. Diseño 3D"
-            )
-            btn_add = gr.Button("Guardar Pedido", variant="primary")
-            lbl_status = gr.Markdown()
-            
-            gr.Markdown("### 📊 Pedidos Activos")
-            tabla_pedidos = gr.Dataframe(
-                headers=["Cliente", "Descripción", "Departamento", "Estado"],
-                value=actualizar_tabla(),
-                interactive=False
-            )
+            gr.Markdown("### ⚙️ Control y Seguimiento de Producción")
+            with gr.Row():
+                with gr.Column(scale=1):
+                    txt_cliente = gr.Textbox(label="👤 Nombre del Cliente", placeholder="Ej. Juan Pérez")
+                    txt_desc = gr.Textbox(label="💍 Descripción de la Joya", placeholder="Ej. Anillo de graduación Oro 14k")
+                    dd_depto = gr.Dropdown(
+                        choices=[
+                            "1. Diseño 3D", 
+                            "2. Impresión / Inyección", 
+                            "3. Casting (Fundición)", 
+                            "4. Limado / Armado", 
+                            "5. Acabado y Láser", 
+                            "6. Entregado"
+                        ], 
+                        label="📍 Departamento Actual",
+                        value="1. Diseño 3D"
+                    )
+                    btn_add = gr.Button("✨ Registrar Nuevo Pedido", variant="primary", size="lg")
+                    lbl_status = gr.Markdown()
+                    
+            with gr.Row():
+                gr.Markdown("### 📊 Estado Actual en el Taller")
+            with gr.Row():
+                tabla_pedidos = gr.Dataframe(
+                    headers=["Cliente", "Descripción", "Departamento", "Estado"],
+                    value=actualizar_tabla(),
+                    interactive=False,
+                    wrap=True
+                )
             
             btn_add.click(
                 fn=agregar_nuevo_pedido,
@@ -172,11 +195,15 @@ with gr.Blocks(title="Mundo de Joyas - Jarvis", head=ios_meta_head) as demo:
             )
             
         with gr.Tab("📸 Escanear"):
-            gr.Markdown("### Digitalizar Notas y Moldes")
-            img_input = gr.Image(type="filepath", label="Foto de nota / lista")
-            txt_input = gr.Textbox(label="Observaciones (Opcional)")
-            btn_procesar = gr.Button("Digitalizar con IA", variant="primary")
-            resultado_output = gr.Markdown()
+            gr.Markdown("### 📷 Digitalizador de Notas y Libretas a Mano")
+            with gr.Row():
+                img_input = gr.Image(type="filepath", label="Toma o sube una foto de tu libreta")
+            with gr.Row():
+                txt_input = gr.Textbox(label="Notas o instrucciones adicionales (Opcional)", placeholder="Ej. Priorizar moldes de la fila 3...")
+            with gr.Row():
+                btn_procesar = gr.Button("🚀 Procesar y Extraer con IA", variant="primary", size="lg")
+            with gr.Row():
+                resultado_output = gr.Markdown(label="Resultado Organizado")
             
             btn_procesar.click(
                 fn=digitalizar_foto_nota, 
