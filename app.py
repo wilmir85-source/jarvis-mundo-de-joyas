@@ -11,7 +11,7 @@ client = OpenAI(
     api_key=GROQ_API_KEY
 )
 
-# Personalidad renovada: Cálida, experta, de confianza y directo al grano
+# Personalidad: Cercana, experta en joyería, amigable y de cuate a cuate
 SYSTEM_PROMPT = """
 Eres JARVIS, el compa y asistente personal en 'Mundo de Joyas'. Estás en la jugada con todo lo relacionado al taller: desde diseño 3D en Rhino, impresión de resina, vulcanizado, inyección, casting, hasta el refinado de metales y acabados con láser o platino.
 Hablas de forma natural, relajada pero ultra profesional, cercana y con calidez humana. Nada de respuestas robóticas o frías; tratas al maestro joyero de cuate a cuate, con confianza, claridad y siempre tirando buena vibra para sacar la chamba adelante sin enredos.
@@ -52,7 +52,7 @@ def chat_with_jarvis(message, history):
     
     try:
         response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             messages=messages,
             temperature=0.7
         )
@@ -80,7 +80,7 @@ def procesar_texto_nota(texto_nota):
         """
         
         response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             messages=[{"role": "user", "content": prompt_texto}],
             temperature=0.3
         )
